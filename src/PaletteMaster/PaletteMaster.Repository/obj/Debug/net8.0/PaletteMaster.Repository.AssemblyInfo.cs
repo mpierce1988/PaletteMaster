@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PaletteMaster.Repository")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6794adf7fdd6b9b5c2e0a539ac4c2b6ac06f1791")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
 [assembly: System.Reflection.AssemblyProductAttribute("PaletteMaster.Repository")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PaletteMaster.Repository")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
