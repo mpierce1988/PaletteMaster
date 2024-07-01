@@ -29,8 +29,13 @@ public class Color : BaseEntity
             hexadecimal = hexadecimal[1..]; // hexadecimal.Substring(1);
         }
 
-        Red = Convert.ToInt32(hexadecimal.Substring(0, 2));
-        Green = Convert.ToInt32(hexadecimal.Substring(2, 2));
-        Blue = Convert.ToInt32(hexadecimal.Substring(4, 2));
+        Red = Convert.ToInt32(hexadecimal.Substring(0, 2), 16);
+        Green = Convert.ToInt32(hexadecimal.Substring(2, 2), 16);
+        Blue = Convert.ToInt32(hexadecimal.Substring(4, 2), 16);
+    }
+    
+    public string ToHex()
+    {
+        return $"#{Red:X2}{Green:X2}{Blue:X2}";
     }
 }

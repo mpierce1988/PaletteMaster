@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using PaletteMaster.Models.Domain;
 
 namespace PaletteMaster.Repository;
@@ -26,4 +27,19 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
         builder.UseSqlite(sqliteDataSource);
         return new ApplicationDbContext(builder.Options); 
     } 
+}
+
+public static class RegisterDbContext
+{
+    public static void RegisterApplicationDbContext(this IServiceCollection services)
+    {
+        services.AddDbContext<ApplicationDbContext>(options =>
+        {
+            //IConfigurationRoot localConfiguration = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile(@Directory.GetCurrentDirectory() + "/appsettings.json").Build(); 
+            string dbName = "palettemaster.db";
+            string dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                dbName);
+            options.UseSqlite(dbPath);
+        });
+    }
 }

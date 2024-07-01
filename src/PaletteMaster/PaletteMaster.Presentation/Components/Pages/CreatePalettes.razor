@@ -1,0 +1,147 @@
+@page "/palettes/create"
+@using PaletteMaster.Services.Palettes
+@using PaletteMaster.Models.DTO.Palettes
+@using PaletteMaster.Models.Domain
+
+<h3>Palettes</h3>
+<br />
+
+<EditForm Model="@_request" OnValidSubmit="CreatePalette">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    
+    <div class="row">
+        <div class="col-xs-12">
+            <label for="RequestName"><p>Name</p></label>
+            <InputText DisplayName="Name" @bind-Value="@_request.Name" Id="RequestName"/>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <label for="RequestColors"><p>Colors</p></label>
+        </div>
+        <div class="col-xs-12 col-lg-6">
+            <label>Select a Color</label>
+            <button @onclick="AddColor" disabled="@(_selectedColor is null)" type="button">Add</button>
+        </div>
+        <div class="col-xs-12 col-lg-6">
+            <input type="color" @oninput="ReceiveColorInput"/>
+        </div>
+    </div>
+    @if (_request.Colors.Count > 0)
+    {
+        <div class="row">
+            @foreach (var color in _request.Colors)
+            {
+                <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                    <p>@color.ToHex()</p>
+                    <div style="width: 75px; height: 75px; background-color: @(color.ToHex())"></div>
+                    <button @onclick="() => RemoveColor(color)" type="button">Remove</button>
+                </div>
+            }
+        </div>
+    }
+    <div class="row between-xs">
+        <div class="col">
+            <button type="submit">Create</button>
+        </div>
+        <div class="col">
+            <button type="button" @onclick="Reset" class="secondary">Reset</button>
+        </div>
+    </div>
+    
+</EditForm>
+
+<br/>
+
+@if (_isLoading)
+{
+    <p>Loading...</p>
+}
+else if (_errorMessage is not null)
+{
+    <p>Error: @_errorMessage</p>
+}
+else if (_response is not null)
+{
+    <p>Successfully created a pallete with the name @(_response.Name) and an ID of @(_response.PaletteId) and @(_response.Colors.Count == 1 ? "1 Color" : $"{_response.Colors.Count} Colors")</p>
+}
+
+
+@code {
+    [Inject] private IPaletteService PaletteService { get; set; } = default!;
+    
+    private CreatePaletteRequest _request = new CreatePaletteRequest();
+    private CreatePaletteResponse? _response = null;
+
+    private bool _isLoading;
+    private string? _errorMessage;
+    private Color? _selectedColor = null;
+
+    private async Task CreatePalette()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _response = null;
+        
+        Result<CreatePaletteResponse, HandledException> result = await PaletteService.CreatePaletteAsync(_request);
+        
+        result.Match(
+            success: response =>
+            {
+                _response = response;
+                _request = new();
+                return true;
+            },
+            failure: error =>
+            {
+                _errorMessage = error.Message;
+                return false;
+            }
+        );
+
+        _isLoading = false;
+    }
+    
+    private void Reset()
+    {
+        _request = new();
+        _response = null;
+        _isLoading = false;
+        _errorMessage = null;
+    }
+
+    private void AddColor()
+    {
+        if (_selectedColor is null) return;
+
+        if (_request.Colors.Contains(_selectedColor))
+        {
+            _errorMessage = "Color already added";
+            
+        }
+        else
+        {
+            _request.Colors.Add(_selectedColor);
+            _errorMessage = null;
+        }
+        
+        _selectedColor = null;
+    }
+
+    private void ReceiveColorInput(ChangeEventArgs obj)
+    {
+        if (obj.Value is null) return;
+        
+        _selectedColor = new Color(obj.Value.ToString()!);
+    }
+
+    private void RemoveColor(Color color)
+    {
+        if (_request.Colors.Contains(color))
+        {
+            _request.Colors.Remove(color);
+        }
+    }
+
+}

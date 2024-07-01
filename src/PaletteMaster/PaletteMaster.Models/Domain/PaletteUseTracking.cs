@@ -10,6 +10,11 @@ public class PaletteUseTracking : BaseEntity
     public int PaletteId { get; set; }
 
     public virtual Palette Palette { get; set; } = default!;
+
+    public PaletteUseTracking()
+    {
+        
+    }
     
     public PaletteUseTracking (int paletteId)
     {

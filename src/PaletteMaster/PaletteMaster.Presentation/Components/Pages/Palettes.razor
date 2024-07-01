@@ -1,0 +1,219 @@
+@page "/palettes"
+@using PaletteMaster.Services.Palettes
+@using PaletteMaster.Models.DTO.Palettes
+@using PaletteMaster.Models
+@using PaletteMaster.Models.Domain
+
+<h3>Palettes</h3>
+<br />
+
+<button @onclick="GoToPaletteCreate">Create Palette</button>
+
+<br />
+
+<EditForm Model="@_request" OnValidSubmit="GetPalettes">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    
+    <div class="row">
+        <div class="col-xs-12">
+            <label for="RequestName"><p>Name</p></label>
+            <InputText DisplayName="Name" @bind-Value="@_request.Name" Id="RequestName"/>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <label for="RequestColors"><p>Colors</p></label>
+        </div>
+        <div class="col-xs-12 col-lg-6">
+            <label>Select a Color</label>
+            <button @onclick="AddColor" disabled="@(_selectedColor is null)" type="button">Add</button>
+        </div>
+        <div class="col-xs-12 col-lg-6">
+            <input type="color" @oninput="ReceiveColorInput"/>
+        </div>
+    </div>
+    @if (_request.Colors is not null && _request.Colors.Count > 0)
+    {
+        <div class="row">
+            @foreach (Color color in _request.Colors)
+            {
+                <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                    <p>@color.ToHex()</p>
+                    <div style="width: 75px; height: 75px; background-color: @(color.ToHex())"></div>
+                    <button @onclick="() => RemoveColor(color)" type="button">Remove</button>
+                </div>
+            }
+        </div>
+    }
+    <div class="row">
+        <div class="col-xs-12">
+            <button type="submit">Search</button>
+        </div>
+    </div>
+</EditForm>
+
+<br />
+<hr />
+<br />
+
+@if (_isLoading)
+{
+    <p>Loading...</p>
+    <br />
+}
+else if (_errorMessage != null)
+{
+    <p>@_errorMessage</p>
+    <br />
+}
+else if (_response != null)
+{
+    <p>Number of Results: @_response.TotalCount</p>
+    <hr />
+    <table class="striped">
+        <thead>
+        <tr>
+            <th scope="col">Id</th>
+            <th scope="col">Name</th>
+            <th scope="col">Created Date</th>
+            <th scope="col">Modified Date</th>
+            <th scope="col">Edit</th>
+            <th scope="col">Delete</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (Palette palette in _response.Palettes)
+        {
+            <tr>
+                <td>@palette.PaletteId</td>
+                <td>@palette.Name</td>
+                <td>@palette.CreatedDate</td>
+                <td>@palette.ModifiedDate</td>
+                <td><button>Edit</button></td>
+                <td><button>Delete</button></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <div class="row between-xs">
+        <div class="col">
+            <button disabled="@(!_response.HasPreviousPage)" @onclick="GoToPreviousPage">Previous Page</button>
+        </div>
+        <div class="col">
+            <button disabled="@(!_response.HasNextPage)" @onclick="GoToNextPage">Next Page</button>
+        </div>
+    </div>
+}
+else
+{
+    <p>No palettes found.</p>
+}
+
+<br />
+
+@code {
+    [Inject] private IPaletteService PaletteService { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private GetPalettesRequest _request = new();
+    private GetPalettesResponse? _response;
+
+    private Color? _selectedColor = null;
+
+    private string? _errorMessage;
+    private bool _isLoading;
+
+    // protected override async Task OnParametersSetAsync()
+    // {
+    //     await GetPalettes();
+    //
+    //     await base.OnParametersSetAsync();
+    // }
+
+    private async Task GoToNextPage()
+    {
+        _request.Page++;
+        await GetPalettes();
+    }
+
+    private async Task GoToPreviousPage()
+    {
+        _request.Page--;
+        await GetPalettes();
+    }
+
+    private async Task GetPalettes()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        
+        try
+        {
+            Result<GetPalettesResponse, HandledException> result = await PaletteService.GetPalettesAsync(_request);
+
+            result.Match(
+                success: response =>
+                {
+                    _response = response;
+                    return true;
+                },
+                failure: error =>
+                {
+                    _errorMessage = error.Message;
+                    return false;
+                }
+            );
+        }
+        catch (Exception e)
+        {
+            _errorMessage = e.Message;
+        }
+
+        _isLoading = false;
+    }
+
+    private void Reset()
+    {
+        _isLoading = false;
+        _errorMessage = null;
+        _response = null;
+        _request = new();
+    }
+
+    private void ReceiveColorInput(ChangeEventArgs obj)
+    {
+        if (obj.Value is null) return;
+        
+        _selectedColor = new Color(obj.Value.ToString()!);
+    }
+
+    private void AddColor()
+    {
+        if (_selectedColor is null) return;
+        
+        if (_request.Colors is null)
+        {
+            _request.Colors = new();
+        }
+        
+        _request.Colors.Add(_selectedColor);
+        _selectedColor = null;
+    }
+
+    private void RemoveColor(Color color)
+    {
+        if (_request.Colors is null) return;
+        
+        if (_request.Colors.Contains(color))
+        {
+            _request.Colors.Remove(color);
+        }
+    }
+    
+    private void GoToPaletteCreate()
+    {
+        Navigation.NavigateTo("/palettes/create");
+    }
+
+}

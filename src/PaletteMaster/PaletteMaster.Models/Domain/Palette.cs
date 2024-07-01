@@ -13,6 +13,11 @@ public class Palette : BaseEntity
     
     public virtual List<PaletteUseTracking> PaletteUseTrackings { get; set; } = new List<PaletteUseTracking>();
 
+    public Palette()
+    {
+        
+    }
+
     public Palette(string name)
     {
         Name = name;
