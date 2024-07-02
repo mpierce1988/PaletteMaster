@@ -39,7 +39,7 @@ public static class RegisterDbContext
             string dbName = "palettemaster.db";
             string dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 dbName);
-            options.UseSqlite(dbPath);
+            options.UseSqlite($"Data Source = {dbPath}");
         });
     }
 }

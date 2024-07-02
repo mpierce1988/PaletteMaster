@@ -1,12 +1,22 @@
-﻿namespace PaletteMaster.Presentation;
+﻿using Microsoft.EntityFrameworkCore;
+using PaletteMaster.Repository;
+
+namespace PaletteMaster.Presentation;
 
 public partial class App : Application
 {
-    public App()
+    private readonly ApplicationDbContext _context;
+    public App(ApplicationDbContext context)
     {
         InitializeComponent();
 
         MainPage = new MainPage();
+        _context = context;
+    }
+
+    protected override void OnStart()
+    {
+        _context.Database.Migrate();
     }
 
     protected override Window CreateWindow(IActivationState? activationState)

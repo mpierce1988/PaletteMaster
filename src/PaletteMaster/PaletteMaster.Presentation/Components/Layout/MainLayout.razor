@@ -1,7 +1,10 @@
 ﻿@inherits LayoutComponentBase
 
-<NavMenu />
+<header style="position: fixed; top: 0; width: 100%; background-color: var(--pico-background-color); color: var(--pico-color)" 
+        class="container-fluid">
+    <NavMenu />
+</header>
 
-<main class="container">
+<main class="container" style="margin-top: 102px;">
     @Body
 </main>

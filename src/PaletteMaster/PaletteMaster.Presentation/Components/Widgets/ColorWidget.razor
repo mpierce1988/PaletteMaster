@@ -1,0 +1,24 @@
+<article style="text-align: center;">
+    <header><p style="margin: auto;">@SelectedColor.Hexadecimal</p></header>
+    <div style="width: @(Width)px; height: @(Height)px; background-color: @(SelectedColor.Hexadecimal); margin: auto;"></div>
+    <footer><button @onclick="() => RemoveColor(SelectedColor)" type="button" style="margin: auto;" class="secondary">Remove</button></footer>
+</article>
+
+
+
+
+@code {
+    [Parameter] public PaletteMaster.Models.Domain.Color SelectedColor { get; set; } = new("#000000");
+    [Parameter] public EventCallback<PaletteMaster.Models.Domain.Color> OnRemove { get; set; }
+    // [Parameter] public EventCallback<PaletteMaster.Models.Domain.Color> OnEdit { get; set; }
+    [Parameter] public int Width { get; set; } = 75;
+    [Parameter] public int Height { get; set; } = 75;
+
+    private async Task RemoveColor(PaletteMaster.Models.Domain.Color color)
+    {
+        if (OnRemove.HasDelegate)
+        {
+            await OnRemove.InvokeAsync(SelectedColor);
+        }
+    }
+}

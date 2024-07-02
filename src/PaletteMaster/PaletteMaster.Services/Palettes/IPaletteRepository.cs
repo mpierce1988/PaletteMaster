@@ -10,4 +10,6 @@ public interface IPaletteRepository
     Task<Palette?> GetPaletteAsync(int requestPalletId);
     Task<Palette?> GetPaletteWithUseTrackingAsync(int requestPalleteId);
     Task<Palette> CreatePaletteAsync(Palette palette);
+    Task<Palette> UpdatePaletteAsync(Palette palette);
+    Task DeletePaletteAsync(int paletteId);
 }

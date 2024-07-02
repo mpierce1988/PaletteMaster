@@ -1,12 +1,28 @@
-@page "/palettes/create"
+@page "/Palettes/{id}"
 @using PaletteMaster.Services.Palettes
 @using PaletteMaster.Models.DTO.Palettes
 @using PaletteMaster.Models.Domain
 
-<h3>Create Palette</h3>
+<h3>Edit Palette</h3>
 <br />
 
-<EditForm Model="@_request" OnValidSubmit="CreatePalette">
+@if (_errorMessage is not null)
+{
+    <article>
+        <header class="pico-background-red-500">An Error Has Occurred</header>
+        <p>@_errorMessage</p>
+    </article>
+}
+
+@if (_response is not null)
+{
+    <article>
+        <header class="pico-background-green-500">Palette Successfully Updated</header>
+        <p>Palette '@(_response.Name)' with ID @(_response.PaletteId) and @(_response.Colors.Count) colors</p>
+    </article>
+}
+
+<EditForm Model="@_request" OnValidSubmit="UpdatePalette">
     <DataAnnotationsValidator />
     <ValidationSummary />
     
@@ -46,7 +62,7 @@
     }
     <div class="row">
         <div class="col-xs-3">
-            <button type="submit">Create</button>
+            <button type="submit">Update</button>
         </div>
         <div class="col-xs-3">
             <button type="button" @onclick="Reset" class="outline secondary">Reset</button>
@@ -55,63 +71,85 @@
     
 </EditForm>
 
-<br/>
-
-@if (_isLoading)
-{
-    <p>Loading...</p>
-}
-else if (_errorMessage is not null)
-{
-    <p>Error: @_errorMessage</p>
-}
-else if (_response is not null)
-{
-    <p>Successfully created a pallete with the name @(_response.Name) and an ID of @(_response.PaletteId) and @(_response.Colors.Count == 1 ? "1 Color" : $"{_response.Colors.Count} Colors")</p>
-}
-
-
 @code {
     [Inject] private IPaletteService PaletteService { get; set; } = default!;
     
-    private CreatePaletteRequest _request = new CreatePaletteRequest();
-    private CreatePaletteResponse? _response = null;
+    [Parameter] public string id { get; set; }
 
+    private int _paletteId => Convert.ToInt32(id);
+    
+    private UpdatePaletteRequest _request = new UpdatePaletteRequest();
+    private UpdatePaletteResponse? _response = null;
+    private string? _errorMessage = null;
     private bool _isLoading;
-    private string? _errorMessage;
-    private Color? _selectedColor = null;
+    private Color? _selectedColor;
 
-    private async Task CreatePalette()
+    protected override async Task OnParametersSetAsync()
+    {
+        await GetPalette();
+
+        await base.OnParametersSetAsync();
+    }
+
+    private async Task GetPalette()
+    {
+        GetPaletteRequest request = new()
+        {
+            PalleteId = _paletteId
+        };
+        
+        Result<GetPaletteResponse, HandledException> result = await PaletteService.GetPaletteAsync(request);
+
+        result.Match(
+            success: response =>
+            {
+                _request = new()
+                {
+                    PaletteId = response.PaletteId,
+                    Name = response.Name,
+                    Colors = response.Colors
+                };
+                    
+                return true;
+            } ,
+            failure: error =>
+            {
+                _errorMessage = error.Message;
+                    
+                return false;
+            }
+        );
+    }
+
+    private async Task UpdatePalette()
     {
         _isLoading = true;
         _errorMessage = null;
         _response = null;
         
-        Result<CreatePaletteResponse, HandledException> result = await PaletteService.CreatePaletteAsync(_request);
-        
+        Result<UpdatePaletteResponse, HandledException> result = await PaletteService.UpdatePaletteAsync(_request);
+
         result.Match(
-            success: response =>
+            response =>
             {
                 _response = response;
-                _request = new();
                 return true;
             },
-            failure: error =>
+            error =>
             {
                 _errorMessage = error.Message;
                 return false;
             }
-        );
+            );
 
         _isLoading = false;
     }
-    
-    private void Reset()
+
+    private void ReceiveColorInput(ChangeEventArgs obj)
     {
-        _request = new();
-        _response = null;
-        _isLoading = false;
-        _errorMessage = null;
+        if (obj.Value is null) return;
+        
+        _selectedColor = new Color(obj.Value.ToString()!);
     }
 
     private void AddColor()
@@ -132,19 +170,21 @@ else if (_response is not null)
         _selectedColor = null;
     }
 
-    private void ReceiveColorInput(ChangeEventArgs obj)
-    {
-        if (obj.Value is null) return;
-        
-        _selectedColor = new Color(obj.Value.ToString()!);
-    }
-
     private void RemoveColor(Color color)
     {
         if (_request.Colors.Contains(color))
         {
             _request.Colors.Remove(color);
         }
+    }
+
+    private async Task Reset()
+    {
+        _errorMessage = null;
+        _response = null;
+        _isLoading = true;
+        await GetPalette();
+        _isLoading = false;
     }
 
 }

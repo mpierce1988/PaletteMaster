@@ -108,4 +108,51 @@ public class PaletteService : IPaletteService
         }
 
     }
+
+    public async Task<Result<UpdatePaletteResponse, HandledException>> UpdatePaletteAsync(UpdatePaletteRequest request)
+    {
+        try
+        {
+            // Validate request parameters
+            var validationResults = new List<ValidationResult>();
+            var validationContext = new ValidationContext(request, null, null);
+
+            if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+            {
+                return new HandledException(validationResults);
+            }
+            
+                // Get Palette by ID from repository
+                Palette? palette = await _paletteRepository.GetPaletteAsync(request.PaletteId);
+    
+                if (palette is null) return new HandledException("Palette Not Found");
+    
+                // Update Palette from request
+                palette.Name = request.Name;
+                palette.Colors = request.Colors;
+    
+                // Save Palette to repository
+                palette = await _paletteRepository.UpdatePaletteAsync(palette);
+    
+                return new UpdatePaletteResponse(palette);
+        }
+        catch (Exception e)
+        {
+            return new HandledException(e.Message);
+        }
+    }
+
+    public async Task<Result<bool, HandledException>> DeletePaletteAsync(int paletteId)
+    {
+        try
+        {
+            await _paletteRepository.DeletePaletteAsync(paletteId);
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            return new HandledException(e.Message);
+        }
+    }
 }

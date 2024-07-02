@@ -99,4 +99,30 @@ public class MockPaletteRepository : IPaletteRepository
         
         return palette;
     }
+
+    public async Task<Palette> UpdatePaletteAsync(Palette palette)
+    {
+        await Task.Delay(TimeSpan.FromSeconds(1));
+        
+        var existingPalette = _examplePalettes.FirstOrDefault(p => p.PaletteId == palette.PaletteId);
+        
+        if (existingPalette is null) throw new Exception("Palette not found");
+        
+        existingPalette.Name = palette.Name;
+        existingPalette.Colors = palette.Colors;
+        existingPalette.ModifiedDate = DateTime.Now;
+        
+        return existingPalette;
+    }
+
+    public async Task DeletePaletteAsync(int paletteId)
+    {
+        await Task.Delay(TimeSpan.FromSeconds(1));
+
+        var paletteToDelete = _examplePalettes.FirstOrDefault(p => p.PaletteId == paletteId);
+        
+        if (paletteToDelete is null) throw new Exception("Palette not found");
+        
+        _examplePalettes.Remove(paletteToDelete);
+    }
 }

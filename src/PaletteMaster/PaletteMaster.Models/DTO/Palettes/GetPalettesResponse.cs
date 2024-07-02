@@ -10,5 +10,6 @@ public class GetPalettesResponse
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 10;
     public bool HasPreviousPage => Page > 1;
-    public bool HasNextPage => Page < (TotalCount / PageSize) + 1;
+    // public bool HasNextPage => Page < (TotalCount / PageSize) + 1;
+    public bool HasNextPage => Page < Math.Ceiling((double)TotalCount / PageSize);
 }

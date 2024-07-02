@@ -25,7 +25,10 @@ public class PaletteRepository : IPaletteRepository
         
         if (request.Colors is not null && request.Colors.Count > 0)
         {
-            query = query.Where(p => p.Colors.Any(c => request.Colors.Contains(c)));
+            foreach (Color color in request.Colors)
+            {
+                query = query.Where(p => p.Colors.Any(c => c.Hexadecimal == color.Hexadecimal));
+            }
         }
         
         query = request.Sorting switch
@@ -95,5 +98,23 @@ public class PaletteRepository : IPaletteRepository
         await _context.SaveChangesAsync();
         
         return palette;
+    }
+
+    public async Task<Palette> UpdatePaletteAsync(Palette palette)
+    {
+        _context.Palettes.Update(palette);
+        await _context.SaveChangesAsync();
+        
+        return palette;
+    }
+
+    public async Task DeletePaletteAsync(int paletteId)
+    {
+        Palette? palette = await _context.Palettes.FindAsync(paletteId);
+        
+        if(palette is null) throw new Exception("Palette not found");
+        
+        _context.Palettes.Remove(palette);
+        await _context.SaveChangesAsync();
     }
 }

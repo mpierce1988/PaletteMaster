@@ -15,7 +15,7 @@ public class Palette : BaseEntity
 
     public Palette()
     {
-        
+        Name = string.Empty;
     }
 
     public Palette(string name)

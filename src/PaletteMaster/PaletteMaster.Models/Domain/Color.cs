@@ -6,36 +6,26 @@ public class Color : BaseEntity
 {
     public int ColorId { get; set; }
     
-    [Range(minimum:0, maximum:255, ErrorMessage = "Red must be between 0 and 255")]
-    public int Red { get; set; }
-    
-    [Range(minimum:0, maximum:255, ErrorMessage = "Red must be between 0 and 255")]
-    public int Green { get; set; }
-    
-    [Range(minimum:0, maximum:255, ErrorMessage = "Red must be between 0 and 255")]
-    public int Blue { get; set; }
+    [Length(minimumLength: 7, maximumLength: 7, ErrorMessage="Hexadecimal must be at 7 characters long")]
+    public string Hexadecimal { get; set; }
 
-    public Color(int red, int green, int blue)
+    public Color()
     {
-        Red = red;
-        Green = green;
-        Blue = blue;
     }
-
+    
     public Color(string hexadecimal)
     {
-        if (hexadecimal.StartsWith('#'))
-        {
-            hexadecimal = hexadecimal[1..]; // hexadecimal.Substring(1);
-        }
-
-        Red = Convert.ToInt32(hexadecimal.Substring(0, 2), 16);
-        Green = Convert.ToInt32(hexadecimal.Substring(2, 2), 16);
-        Blue = Convert.ToInt32(hexadecimal.Substring(4, 2), 16);
+        Hexadecimal = hexadecimal;
     }
-    
-    public string ToHex()
+
+    public override bool Equals(object? obj)
     {
-        return $"#{Red:X2}{Green:X2}{Blue:X2}";
+        return obj is Color color &&
+               Hexadecimal == color.Hexadecimal;
+    }
+
+    public override int GetHashCode()
+    {
+        return Hexadecimal.GetHashCode();
     }
 }
