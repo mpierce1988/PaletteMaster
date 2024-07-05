@@ -2,6 +2,9 @@
 @using PaletteMaster.Services.Palettes
 @using PaletteMaster.Models.DTO.Palettes
 @using PaletteMaster.Models.Domain
+@using PaletteMaster.Models.DTO.ImageProcessing
+@using PaletteMaster.Presentation.Services
+@using PaletteMaster.Services.ImageProcessing
 
 <h3>Edit Palette</h3>
 <br />
@@ -71,8 +74,40 @@
     
 </EditForm>
 
+<br />
+
+<div class="row center-xs">
+    <div class="col-xs-12 col-sm-8 col-md-6 col-lg-4">
+        <article>
+            <header>Select Preview Image</header>
+            @if(_previewImageSrc is not null)
+            {
+                <img src="@_previewImageSrc" alt="Preview Image" />
+            }
+            else if (_isLoadingPreviewImage)
+            {
+                <article aria-busy="true"></article>
+            }
+            else if (_imagePreviewError is not null)
+            {
+                <p class="pico-background-red-250">Error: @_imagePreviewError</p>
+            }
+            else
+            {
+                <p>Upload an image to preview</p>
+            }
+            <footer>
+                <button type="button" class="secondary" @onclick="ClearPreviewImage" disabled="@(_previewImageSrc = null)">Clear Image</button>
+                <button type="button" @onclick="UploadPreviewImage">Upload Image</button>
+            </footer>
+        </article>
+    </div>
+</div>
+
 @code {
     [Inject] private IPaletteService PaletteService { get; set; } = default!;
+    [Inject] private IFilePickerService FilePickerService { get; set; } = default!;
+    [Inject] private IImageProcessingService ImageProcessingService { get; set; } = default!;
     
     [Parameter] public string id { get; set; }
 
@@ -83,6 +118,11 @@
     private string? _errorMessage = null;
     private bool _isLoading;
     private Color? _selectedColor;
+
+    private byte[]? _previewImage;
+    private string? _previewImageSrc;
+    private string? _imagePreviewError;
+    private bool _isLoadingPreviewImage;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -185,6 +225,48 @@
         _isLoading = true;
         await GetPalette();
         _isLoading = false;
+    }
+
+    private void ClearPreviewImage()
+    {
+        _previewImage = null;
+        _previewImageSrc = null;
+    }
+
+    private async Task UploadPreviewImage()
+    {
+        _isLoadingPreviewImage = true;
+        _imagePreviewError = null;
+        var (stream, fileName, filePath) = await FilePickerService.PickFileAndNameAsync();
+        
+        if (stream is null || string.IsNullOrWhiteSpace(fileName)) return;
+
+        ImageProcessingRequest request = new()
+        {
+            FileName = fileName,
+            FileStream = stream,
+            PathToImage = filePath,
+            Colors = _request.Colors
+        };
+        
+        Result<ImageProcessingResponse,HandledException> result = await ImageProcessingService.ProcessImageAsync(request);
+
+        result.Match<object?>(
+            success: response =>
+            {
+                _previewImage = response.FileStream;
+                _previewImageSrc = $"data:image/png;base64,{Convert.ToBase64String(_previewImage)}";
+                return null;
+            },
+            failure: error =>
+            {
+                _imagePreviewError = error.Message;
+                return null;
+            }
+            );
+
+        _isLoadingPreviewImage = false;
+
     }
 
 }

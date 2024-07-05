@@ -11,7 +11,6 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.0"/>
-        <PackageReference Include="Moq" Version="4.20.70" />
         <PackageReference Include="xunit" Version="2.4.2"/>
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -24,7 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\PaletteMaster.Services\PaletteMaster.Services.csproj" />
+      <ProjectReference Include="..\PaletteMaster.Services.ImageSharp\PaletteMaster.Services.ImageSharp.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -32,10 +31,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Samples\HexSample.hex">
+      <None Update="Samples\sangria-8x.png">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Samples\PaintNETSample.txt">
+      <None Update="Samples\mac-paint-8x.png">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

@@ -2,9 +2,12 @@
 @using PaletteMaster.Services.Palettes
 @using PaletteMaster.Models.DTO.Palettes
 @using PaletteMaster.Models.Domain
+@using PaletteMaster.Presentation.Services
 
 <h3>Create Palette</h3>
 <br />
+
+<button type="button" @onclick="() => _showPaletteImporter = !_showPaletteImporter">Import Palette</button>
 
 <EditForm Model="@_request" OnValidSubmit="CreatePalette">
     <DataAnnotationsValidator />
@@ -70,9 +73,26 @@ else if (_response is not null)
     <p>Successfully created a pallete with the name @(_response.Name) and an ID of @(_response.PaletteId) and @(_response.Colors.Count == 1 ? "1 Color" : $"{_response.Colors.Count} Colors")</p>
 }
 
+@if (_showPaletteImporter)
+{
+    <dialog open>
+        <article>
+            <header>Import Palette</header>
+            <button @onclick="SelectFile">Select File</button>
+            @if (_importErrorMessage is not null)
+            {
+                <p class="pico-background-red-250">Error: @_importErrorMessage</p>
+            }
+            <footer><button @onclick="() => _showPaletteImporter = !_showPaletteImporter">Cancel</button></footer>
+        </article>
+    </dialog>
+}
+
 
 @code {
     [Inject] private IPaletteService PaletteService { get; set; } = default!;
+    [Inject] private IImportPaletteService ImportPaletteService { get; set; } = default!;
+    [Inject] private IFilePickerService FilePicker { get; set; } = default!;
     
     private CreatePaletteRequest _request = new CreatePaletteRequest();
     private CreatePaletteResponse? _response = null;
@@ -80,6 +100,9 @@ else if (_response is not null)
     private bool _isLoading;
     private string? _errorMessage;
     private Color? _selectedColor = null;
+
+    private bool _showPaletteImporter = false;
+    private string? _importErrorMessage;
 
     private async Task CreatePalette()
     {
@@ -144,6 +167,44 @@ else if (_response is not null)
         if (_request.Colors.Contains(color))
         {
             _request.Colors.Remove(color);
+        }
+    }
+
+    private async Task SelectFile()
+    {
+        try
+        {
+            _importErrorMessage = null;
+            
+            var (file, fileName, filePath) = await FilePicker.PickFileAndNameAsync();
+
+            ImportPaletteRequest request = new()
+            {
+                File = file,
+                Name = fileName
+            };
+
+            Result<ImportPaletteResponse, HandledException> result = await ImportPaletteService.ImportPaletteAsync(request);
+
+            List<Color>? colors = result.Match<List<Color>?>(
+                success: response => response.Colors, 
+                failure: error =>
+                {
+                    _importErrorMessage = error.Message;
+                    return null;
+                }
+                );
+
+            if (colors is not null)
+            {
+                _request.Colors = colors;
+                _showPaletteImporter = false;
+            }
+        }
+        catch (Exception e)
+        {
+            _errorMessage = e.Message;
+            _showPaletteImporter = false;
         }
     }
 
