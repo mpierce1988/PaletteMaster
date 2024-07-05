@@ -5,6 +5,7 @@ using PaletteMaster.Presentation.Services;
 using PaletteMaster.Repository;
 using PaletteMaster.Services.ImageProcessing;
 using PaletteMaster.Services.ImageSharp;
+using PaletteMaster.Services.Imports;
 using PaletteMaster.Services.Palettes;
 
 namespace PaletteMaster.Presentation;

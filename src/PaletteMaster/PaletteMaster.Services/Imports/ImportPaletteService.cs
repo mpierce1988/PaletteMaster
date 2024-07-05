@@ -2,8 +2,9 @@ using System.ComponentModel.DataAnnotations;
 using PaletteMaster.Models;
 using PaletteMaster.Models.Domain;
 using PaletteMaster.Models.DTO.Palettes;
+using PaletteMaster.Services.Palettes;
 
-namespace PaletteMaster.Services.Palettes;
+namespace PaletteMaster.Services.Imports;
 
 public class ImportPaletteService : IImportPaletteService
 {

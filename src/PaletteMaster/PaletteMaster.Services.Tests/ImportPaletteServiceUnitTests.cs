@@ -1,6 +1,7 @@
 using PaletteMaster.Models;
 using PaletteMaster.Models.Domain;
 using PaletteMaster.Models.DTO.Palettes;
+using PaletteMaster.Services.Imports;
 using PaletteMaster.Services.Palettes;
 using PaletteMaster.Services.Tests.Utilities;
 
