@@ -67,7 +67,7 @@ public class ImageSharpImageProcessingServiceUnitTests
     }
     
     [Fact]
-    public async Task ProcessImageAsync_OriginalImageHasTransparency_ResultHasTransparency()
+    public async Task ProcessImageAsync_OriginalImageHasTransparency_ResultHasCorrectColorsTransparency()
     {
         // Arrange
         await using Stream inputStream = File.OpenRead(TestUtility.GetSamplePath(OrcFileName));
@@ -113,6 +113,7 @@ public class ImageSharpImageProcessingServiceUnitTests
         using Image<Rgba32> resultImage = Image.Load<Rgba32>(response.FileStream);
         
         Assert.True(AllTransparencyPreserved(inputImage, resultImage));
+        Assert.True(AllColorsMatch(resultImage, colors));
     }
 
     private bool AllTransparencyPreserved(Image<Rgba32> originalImage, Image<Rgba32> resultImage)
