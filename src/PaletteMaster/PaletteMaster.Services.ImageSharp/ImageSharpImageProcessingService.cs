@@ -64,6 +64,8 @@ public class ImageSharpImageProcessingService : IImageProcessingService
                     // Get a refrerence to the pixel at this location
                     ref Rgba32 pixel = ref pixelRow[x];
 
+                    // If the alpha is zero, we need ot use the transparent color from ImageSharp to get 
+                    // transparency in the output image
                     if (pixel.A == 0)
                     {
                         pixel = transparent;
