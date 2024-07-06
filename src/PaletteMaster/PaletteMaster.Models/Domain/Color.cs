@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Numerics;
 
 namespace PaletteMaster.Models.Domain;
 
@@ -35,6 +36,16 @@ public class Color : BaseEntity
         Hexadecimal = hexadecimal;
     }
 
+    public Color(Vector4 colorVector)
+    {
+        int red = (int) (colorVector.X * 255);
+        int green = (int) (colorVector.Y * 255);
+        int blue = (int) (colorVector.Z * 255);
+        int alpha = (int) (colorVector.W * 255);
+        
+        Hexadecimal = $"#{red:X2}{green:X2}{blue:X2}{alpha:X2}";
+    }
+
     public override bool Equals(object? obj)
     {
         return obj is Color color &&
@@ -44,5 +55,10 @@ public class Color : BaseEntity
     public override int GetHashCode()
     {
         return Hexadecimal.GetHashCode();
+    }
+
+    public Vector4 ToVector4()
+    {
+        return new Vector4((int) Red / 255f, (int) Green / 255f, (int) Blue / 255f, (int) Alpha / 255f);
     }
 }

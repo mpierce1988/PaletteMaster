@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using PaletteMaster.Models;
 using PaletteMaster.Models.DTO.ImageProcessing;
@@ -8,6 +9,7 @@ using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Processors.Quantization;
 using Color = PaletteMaster.Models.Domain.Color;
 
 namespace PaletteMaster.Services.ImageSharp;
@@ -34,7 +36,7 @@ public class ImageSharpImageProcessingService : IImageProcessingService
 
 
             // Process Image
-            ApplyPaletteToImage(image, request.Colors);
+            await ApplyPaletteToImage(image, request.Colors);
 
             // Convert image back to stream
             MemoryStream stream = new();
@@ -49,33 +51,26 @@ public class ImageSharpImageProcessingService : IImageProcessingService
         }
     }
 
-    private void ApplyPaletteToImage(Image<Rgba32> image, List<Color> requestColors)
+    private async Task ApplyPaletteToImage(Image<Rgba32> image, List<Color> requestColors)
     {
-        image.ProcessPixelRows(accessor =>
+        await Task.Run(() =>
         {
-            Rgba32 transparent = SixLabors.ImageSharp.Color.Transparent;
-            
-            for (int y = 0; y < accessor.Height; y++)
+            image.Mutate(c => c.ProcessPixelRowsAsVector4(row =>
             {
-                Span<Rgba32> pixelRow = accessor.GetRowSpan(y);
-
-                for (int x = 0; x < pixelRow.Length; x++)
+                Rgba32 transparent = SixLabors.ImageSharp.Color.Transparent;
+                foreach (ref Vector4 pixel in row)
                 {
-                    // Get a refrerence to the pixel at this location
-                    ref Rgba32 pixel = ref pixelRow[x];
-
-                    // If the alpha is zero, we need ot use the transparent color from ImageSharp to get 
-                    // transparency in the output image
-                    if (pixel.A == 0)
+                    if (pixel.W == 0)
                     {
-                        pixel = transparent;
+                        pixel = transparent.ToVector4();
                         continue;
                     }
-                    
-                    Color matchingColor = ImageProcessingUtility.MatchColor(new Color(pixel.ToHex()), requestColors);
-                    pixel = Rgba32.ParseHex(matchingColor.Hexadecimal);
+
+                    Color pixelColor = new Color(pixel);
+                    Color matchingColor = ImageProcessingUtility.MatchColor(pixelColor, requestColors);
+                    pixel = matchingColor.ToVector4();
                 }
-            }
+            }, PixelConversionModifiers.Premultiply));
         });
     }
 }

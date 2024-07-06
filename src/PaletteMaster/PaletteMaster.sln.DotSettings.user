@@ -7,5 +7,6 @@
     &lt;TestId&gt;xUnit::18CE352C-C27A-4A9D-A5AF-778E1190B430::net8.0::PaletteMaster.Services.Tests.ImportPaletteServiceUnitTests.ImportPalette_ImportPaintNET_CorrectResult&lt;/TestId&gt;
     &lt;TestId&gt;xUnit::18CE352C-C27A-4A9D-A5AF-778E1190B430::net8.0::PaletteMaster.Services.Tests.ImportPaletteServiceUnitTests.ImportPaletteAsync_ImportHexFile_CorrectResults&lt;/TestId&gt;
     &lt;TestId&gt;xUnit::DFE86310-87A7-4B5B-B643-2AB2A43CC9E5::net8.0::PaletteMaster.Services.ImageSharp.Tests.ImageSharpImageProcessingServiceUnitTests.Test1&lt;/TestId&gt;
+    &lt;TestId&gt;xUnit::DFE86310-87A7-4B5B-B643-2AB2A43CC9E5::net8.0::PaletteMaster.Services.ImageSharp.Tests.ImageSharpImageProcessingServiceUnitTests.ProcessImageAsync_OriginalImageHasTransparency_ResultHasTransparency&lt;/TestId&gt;
   &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

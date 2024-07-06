@@ -15,9 +15,10 @@ public class ImageSharpImageProcessingServiceUnitTests
 
     private const string SangriaFileName = "sangria-8x.png";
     private const string MacPaintFileName = "mac-paint-8x.png";
+    private const string OrcFileName = "orc07.png";
     
     [Fact]
-    public async Task Test1()
+    public async Task ProcessImageAsync_OriginalImageHasTwoPaletteColors_ResultIdenticalToOriginal()
     {
         // Arrange
         await using Stream inputStream = File.OpenRead(TestUtility.GetSamplePath(MacPaintFileName));
@@ -63,6 +64,84 @@ public class ImageSharpImageProcessingServiceUnitTests
         using Image<Rgba32> actualImage = Image.Load<Rgba32>(response.FileStream);
         
         Assert.True(AllColorsMatch(actualImage, colors));
+    }
+    
+    [Fact]
+    public async Task ProcessImageAsync_OriginalImageHasTransparency_ResultHasTransparency()
+    {
+        // Arrange
+        await using Stream inputStream = File.OpenRead(TestUtility.GetSamplePath(OrcFileName));
+        List<Color> colors = new()
+        {
+            new("#8bc8feff"),
+            new("#051b2cff")
+        };
+
+        ImageProcessingRequest request = new()
+        {
+            FileName = SangriaFileName,
+            FileStream = inputStream,
+            Colors = colors
+        };
+
+        Image<Rgba32> inputImage = Image.Load<Rgba32>(inputStream);
+        byte[] expectedBytes = new byte[inputImage.Width * inputImage.Height * Unsafe.SizeOf<Rgba32>()];
+        inputImage.CopyPixelDataTo(expectedBytes);
+
+        // Act
+        Result<ImageProcessingResponse, HandledException> result =
+            await _imageProcessingService.ProcessImageAsync(request);
+
+        ImageProcessingResponse? response = result.Match<ImageProcessingResponse?>(
+            success: response =>
+            {
+                // Save the image to disk for manual inspection
+                using FileStream fileStream = new(TestUtility.GetSamplePath($"{OrcFileName.Split('.')[0]}-palette.png"), FileMode.Create);
+                MemoryStream memoryStream = (MemoryStream)response.FileStream;
+                memoryStream.Position = 0;
+                byte[] imageBytes = memoryStream.ToArray();
+                fileStream.Write(imageBytes, 0, imageBytes.Length);
+                fileStream.Flush();
+                
+                return response;
+            },
+            failure: error => null
+        );
+        
+        Assert.NotNull(response);
+        
+        using Image<Rgba32> resultImage = Image.Load<Rgba32>(response.FileStream);
+        
+        Assert.True(AllTransparencyPreserved(inputImage, resultImage));
+    }
+
+    private bool AllTransparencyPreserved(Image<Rgba32> originalImage, Image<Rgba32> resultImage)
+    {
+        bool allTransparenciesMatch = true;
+
+        originalImage.ProcessPixelRows(accessor =>
+        {
+            for (int y = 0; y < accessor.Height; y++)
+            {
+                Span<Rgba32> originalPixelRow = accessor.GetRowSpan(y);
+                Span<Rgba32> resultPixelRow = accessor.GetRowSpan(y);
+
+                for (int x = 0; x < originalPixelRow.Length; x++)
+                {
+                    if (originalPixelRow[x].A != 0) continue;
+                    
+                    // Original pixel is transparent, so the result pixel should also be transparent
+                    if (resultPixelRow[x].A != 0)
+                    {
+                        allTransparenciesMatch = false;
+                        break;
+                    }
+                }
+
+
+            }
+        });
+        return allTransparenciesMatch;
     }
 
     private bool AllColorsMatch(Image<Rgba32> image, List<Color> expectedColors)
