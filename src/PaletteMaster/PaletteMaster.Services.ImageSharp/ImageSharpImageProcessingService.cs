@@ -53,6 +53,8 @@ public class ImageSharpImageProcessingService : IImageProcessingService
     {
         image.ProcessPixelRows(accessor =>
         {
+            Rgba32 transparent = SixLabors.ImageSharp.Color.Transparent;
+            
             for (int y = 0; y < accessor.Height; y++)
             {
                 Span<Rgba32> pixelRow = accessor.GetRowSpan(y);
@@ -61,6 +63,13 @@ public class ImageSharpImageProcessingService : IImageProcessingService
                 {
                     // Get a refrerence to the pixel at this location
                     ref Rgba32 pixel = ref pixelRow[x];
+
+                    if (pixel.A == 0)
+                    {
+                        pixel = transparent;
+                        continue;
+                    }
+                    
                     Color matchingColor = ImageProcessingUtility.MatchColor(new Color(pixel.ToHex()), requestColors);
                     pixel = Rgba32.ParseHex(matchingColor.Hexadecimal);
                 }
