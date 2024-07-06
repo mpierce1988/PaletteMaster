@@ -51,26 +51,15 @@ public class ImageSharpImageProcessingService : IImageProcessingService
         }
     }
 
-    private async Task ApplyPaletteToImage(Image<Rgba32> image, List<Color> requestColors)
+    private async Task ApplyPaletteToImage(Image<Rgba32> image, List<Color> allowedColors)
     {
         await Task.Run(() =>
         {
-            image.Mutate(c => c.ProcessPixelRowsAsVector4(row =>
-            {
-                Rgba32 transparent = SixLabors.ImageSharp.Color.Transparent;
-                foreach (ref Vector4 pixel in row)
-                {
-                    if (pixel.W == 0)
-                    {
-                        pixel = transparent.ToVector4();
-                        continue;
-                    }
-
-                    Color pixelColor = new Color(pixel);
-                    Color matchingColor = ImageProcessingUtility.MatchColor(pixelColor, requestColors);
-                    pixel = matchingColor.ToVector4();
-                }
-            }, PixelConversionModifiers.Premultiply));
+            // Add a transparent color, so transparent pixels in the source image are converted to a transparent color in the output
+            allowedColors.Add(new Color("#00000000"));
+            ReadOnlyMemory<SixLabors.ImageSharp.Color> colors = allowedColors.Select(c => new SixLabors.ImageSharp.Color(c.ToVector4())).ToArray();
+        
+            image.Mutate(c => c.Quantize());
         });
     }
 }

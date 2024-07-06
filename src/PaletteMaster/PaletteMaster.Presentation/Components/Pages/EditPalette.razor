@@ -84,6 +84,10 @@
             @if(_previewImageSrc is not null)
             {
                 <img src="@_previewImageSrc" alt="Preview Image" />
+                @if (_imageProcessingTime is not null)
+                {
+                    <p>Processing Time: @_imageProcessingTime.Value.TotalSeconds</p>
+                }
             }
             else if (_isLoadingPreviewImage)
             {
@@ -130,6 +134,7 @@
     private string? _previewImageSrc;
     private string? _imagePreviewError;
     private bool _isLoadingPreviewImage;
+    private TimeSpan? _imageProcessingTime;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -273,6 +278,10 @@
             _imagePreviewError = "No file name";
             return;
         }
+
+        _imageProcessingTime = null;
+
+        DateTime start = DateTime.Now;
         
         ImageProcessingRequest request = new()
         {
@@ -282,6 +291,10 @@
         };
         
         Result<ImageProcessingResponse,HandledException> result = await ImageProcessingService.ProcessImageAsync(request);
+        
+        DateTime end = DateTime.Now;
+        
+        _imageProcessingTime = end - start;
 
         result.Match<object?>(
             success: response =>
