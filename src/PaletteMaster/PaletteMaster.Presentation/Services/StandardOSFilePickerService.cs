@@ -25,16 +25,16 @@ public class StandardOSFilePickerService : IFilePickerService
         return await fileResult.OpenReadAsync();
     }
     
-    public async Task<(Stream?, string, string)> PickFileAndNameAsync()
+    public async Task<(Stream?, string)> PickFileAndNameAsync()
     {
         FileResult? fileResult = await RequestFileResult();
         
         if (fileResult == null)
         {
-            return (null, string.Empty, string.Empty);
+            return (null, string.Empty);
         }
 
-        return (await fileResult.OpenReadAsync(), fileResult.FileName, fileResult.FullPath);
+        return (await fileResult.OpenReadAsync(), fileResult.FileName);
     }
 
     private async Task<FileResult?> RequestFileResult()
@@ -44,21 +44,30 @@ public class StandardOSFilePickerService : IFilePickerService
             PickerTitle = "Please select your Palette file",
             FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>()
             {
-                { DevicePlatform.WinUI, new []{ "txt", "hex", "TXT", "HEX"}}
+                { DevicePlatform.WinUI, new []{ "txt", "hex", "TXT", "HEX", "png", "PNG"}}
             })
             
         });
         return fileResult;
     }
     
-    public async Task<Result<SaveFileResponse, HandledException>> SaveFileAsync(byte[] fileBytes, string fileName)
+    public async Task<Result<SaveFileResponse, HandledException>> SaveFileAsync(SaveFileRequest request)
     {
         try
         {
-            using MemoryStream contentStream = new(fileBytes);
-            contentStream.Position = 0;
+            if (request.FileStream is null)
+            {
+                return new HandledException("File Stream is null");
+            }
+            
+            if (string.IsNullOrWhiteSpace(request.FileName))
+            {
+                return new HandledException("File Name is null or empty");
+            }
+            
+            request.FileStream.Position = 0;
 
-            var fileSaverResult = await _fileSaver.SaveAsync(fileName, contentStream);
+            var fileSaverResult = await _fileSaver.SaveAsync(request.FileName, request.FileStream);
 
             if (!fileSaverResult.IsSuccessful)
             {
@@ -66,7 +75,7 @@ public class StandardOSFilePickerService : IFilePickerService
                     $"Failed to save file with error: {fileSaverResult.Exception?.Message ?? "Unknown"}");
             }
 
-            return new SaveFileResponse(fileName, fileSaverResult.FilePath);
+            return new SaveFileResponse(request.FileName, fileSaverResult.FilePath);
         }
         catch (Exception e)
         {

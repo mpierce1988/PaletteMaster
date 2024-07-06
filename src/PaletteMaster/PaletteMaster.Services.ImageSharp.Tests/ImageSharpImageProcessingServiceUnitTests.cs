@@ -29,7 +29,6 @@ public class ImageSharpImageProcessingServiceUnitTests
 
         ImageProcessingRequest request = new()
         {
-            PathToImage = TestUtility.GetSamplePath(MacPaintFileName),
             FileName = SangriaFileName,
             FileStream = inputStream,
             Colors = colors
@@ -48,7 +47,10 @@ public class ImageSharpImageProcessingServiceUnitTests
             {
                 // Save the image to disk for manual inspection
                 using FileStream fileStream = new(TestUtility.GetSamplePath("mac-paint-8x-palette.png"), FileMode.Create);
-                fileStream.Write(response.FileStream, 0, response.FileStream.Length);
+                MemoryStream memoryStream = (MemoryStream)response.FileStream;
+                memoryStream.Position = 0;
+                byte[] imageBytes = memoryStream.ToArray();
+                fileStream.Write(imageBytes, 0, imageBytes.Length);
                 fileStream.Flush();
                 
                 return response;

@@ -28,25 +28,20 @@ public class ImageSharpImageProcessingService : IImageProcessingService
             }
 
             // Convert stream to Image<Rgba32>
-            Image<Rgba32> image = Image.Load<Rgba32>(request.PathToImage);
-            //Image image = SixLabors.ImageSharp.Image.Load(request.FileStream);
+            //Image<Rgba32> image = Image.Load<Rgba32>(request.PathToImage);
+            request.FileStream!.Position = 0;
+            Image<Rgba32> image = SixLabors.ImageSharp.Image.Load<Rgba32>(request.FileStream);
 
 
             // Process Image
-            ApplyPaletteToImage(image!, request.Colors);
+            ApplyPaletteToImage(image, request.Colors);
 
             // Convert image back to stream
             MemoryStream stream = new();
             await image.SaveAsPngAsync(stream);
             stream.Position = 0;
-
-            if (stream.TryGetBuffer(out var buffer))
-            {
-                return new ImageProcessingResponse(buffer.Array!, request.FileName);
-            }
-
-            return new HandledException("Failed to convert image to stream");
             
+            return new ImageProcessingResponse(stream, request.FileName);
         }
         catch (Exception e)
         {

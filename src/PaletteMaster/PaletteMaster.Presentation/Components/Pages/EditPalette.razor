@@ -2,6 +2,7 @@
 @using PaletteMaster.Services.Palettes
 @using PaletteMaster.Models.DTO.Palettes
 @using PaletteMaster.Models.Domain
+@using PaletteMaster.Models.DTO
 @using PaletteMaster.Models.DTO.ImageProcessing
 @using PaletteMaster.Presentation.Services
 @using PaletteMaster.Services.ImageProcessing
@@ -99,6 +100,10 @@
             <footer>
                 <button type="button" class="secondary" @onclick="ClearPreviewImage" disabled="@(_previewImageSrc = null)">Clear Image</button>
                 <button type="button" @onclick="UploadPreviewImage">Upload Image</button>
+                @if (_previewImage is not null)
+                {
+                    <button type="button" class="contrast" @onclick="SavePreviewImage">Save Image</button>
+                }
             </footer>
         </article>
     </div>
@@ -119,7 +124,9 @@
     private bool _isLoading;
     private Color? _selectedColor;
 
-    private byte[]? _previewImage;
+    private Stream? _receuvedImage;
+    private string? _fileName;
+    private MemoryStream? _previewImage;
     private string? _previewImageSrc;
     private string? _imagePreviewError;
     private bool _isLoadingPreviewImage;
@@ -237,15 +244,40 @@
     {
         _isLoadingPreviewImage = true;
         _imagePreviewError = null;
-        var (stream, fileName, filePath) = await FilePickerService.PickFileAndNameAsync();
+        _receuvedImage = null;
+        _fileName = null;
         
-        if (stream is null || string.IsNullOrWhiteSpace(fileName)) return;
+        (_receuvedImage, _fileName) = await FilePickerService.PickFileAndNameAsync();
 
+        if (_receuvedImage is null || string.IsNullOrWhiteSpace(_fileName))
+        {
+            _imagePreviewError = "No image selected";
+        };
+
+        await ProcessImage();
+
+        _isLoadingPreviewImage = false;
+
+    }
+
+    private async Task ProcessImage()
+    {
+        if (_receuvedImage is null)
+        {
+            _imagePreviewError = "No image selected";
+            return;
+        }
+
+        if (_fileName is null)
+        {
+            _imagePreviewError = "No file name";
+            return;
+        }
+        
         ImageProcessingRequest request = new()
         {
-            FileName = fileName,
-            FileStream = stream,
-            PathToImage = filePath,
+            FileName = _fileName,
+            FileStream = _receuvedImage,
             Colors = _request.Colors
         };
         
@@ -254,8 +286,10 @@
         result.Match<object?>(
             success: response =>
             {
-                _previewImage = response.FileStream;
-                _previewImageSrc = $"data:image/png;base64,{Convert.ToBase64String(_previewImage)}";
+                MemoryStream imageMemoryStream = (MemoryStream)response.FileStream;
+                imageMemoryStream.Position = 0;
+                _previewImage = imageMemoryStream;
+                _previewImageSrc = $"data:image/png;base64,{Convert.ToBase64String(_previewImage.ToArray())}";
                 return null;
             },
             failure: error =>
@@ -263,10 +297,35 @@
                 _imagePreviewError = error.Message;
                 return null;
             }
-            );
+        );
+    }
 
-        _isLoadingPreviewImage = false;
+    private async Task SavePreviewImage()
+    {
+        if (_previewImage is null || _fileName is null)
+        {
+            _imagePreviewError = "No image or filename to save";
+            return;
+        }
 
+        _imagePreviewError = null;
+
+        SaveFileRequest request = new()
+        {
+            FileName = _fileName,
+            FileStream = _previewImage
+        };
+        
+        Result<SaveFileResponse,HandledException> result = await FilePickerService.SaveFileAsync(request);
+
+        result.Match<object?>(
+            success: response => null,
+            failure: error =>
+            {
+                _imagePreviewError = error.Message;
+                return null;
+            }
+        );
     }
 
 }

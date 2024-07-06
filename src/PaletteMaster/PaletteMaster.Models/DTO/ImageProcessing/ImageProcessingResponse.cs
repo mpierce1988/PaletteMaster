@@ -4,10 +4,12 @@ namespace PaletteMaster.Models.DTO.ImageProcessing;
 
 public class ImageProcessingResponse
 {
-    public byte[] FileStream { get; set; }
+    public Stream FileStream { get; set; }
     public string FileName { get; set; }
+    
+    public string FilePath { get; set; }
 
-    public ImageProcessingResponse(byte[] fileStream, string fileName)
+    public ImageProcessingResponse(Stream fileStream, string fileName)
     {
         FileStream = fileStream;
         FileName = fileName;

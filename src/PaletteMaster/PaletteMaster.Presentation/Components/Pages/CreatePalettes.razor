@@ -176,7 +176,13 @@ else if (_response is not null)
         {
             _importErrorMessage = null;
             
-            var (file, fileName, filePath) = await FilePicker.PickFileAndNameAsync();
+            var (file, fileName) = await FilePicker.PickFileAndNameAsync();
+
+            if (file is null)
+            {
+                _importErrorMessage = "Error: No File Selected";
+                return;
+            }
 
             ImportPaletteRequest request = new()
             {

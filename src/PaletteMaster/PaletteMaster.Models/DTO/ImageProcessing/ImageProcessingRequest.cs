@@ -10,9 +10,6 @@ public class ImageProcessingRequest
     [MinLength(1, ErrorMessage = "At Least One Color Is Required")]
     public List<Color> Colors { get; set; } = new();
     
-    [NotNull]
-    public string? PathToImage { get; set; }
-    
     public Stream? FileStream { get; set; }
     
     [NotNull]
