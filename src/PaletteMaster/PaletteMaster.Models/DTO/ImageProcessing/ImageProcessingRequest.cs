@@ -16,6 +16,12 @@ public class ImageProcessingRequest
     [CustomValidation(typeof(ImageProcessingRequest), "ValidateFileName")]
     public string? FileName { get; set; }
     
+    public string? FilePath { get; set; }
+    
+    public string? RelativePath { get; set; }
+    
+    
+    
     public static ValidationResult ValidateFileName(string? fileName, ValidationContext context)
     {
         if (fileName is null)

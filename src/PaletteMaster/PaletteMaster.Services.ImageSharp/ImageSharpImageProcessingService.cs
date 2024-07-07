@@ -13,8 +13,16 @@ namespace PaletteMaster.Services.ImageSharp;
 
 public class ImageSharpImageProcessingService : IImageProcessingService
 {
+    /// <summary>
+    /// Processes an image according to the provided request parameters. This includes validating the request,
+    /// converting the input stream to an Image<Rgba32>, applying a color palette transformation, and returning
+    /// the processed image as a stream within an ImageProcessingResponse object.
+    /// </summary>
+    /// <param name="request">The image processing request containing the image stream and processing parameters.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the ImageProcessingResponse
+    /// object with the processed image stream, or a HandledException detailing any errors encountered during processing.</returns>
     public async Task<Result<ImageProcessingResponse, HandledException>> ProcessImageAsync(ImageProcessingRequest request)
-    {
+    { 
         try
         {
             // Validate request parameters
@@ -39,7 +47,50 @@ public class ImageSharpImageProcessingService : IImageProcessingService
             await image.SaveAsPngAsync(stream);
             stream.Position = 0;
             
-            return new ImageProcessingResponse(stream, request.FileName);
+            return new ImageProcessingResponse(stream, request.FileName, request.RelativePath!);
+        }
+        catch (Exception e)
+        {
+            return new HandledException(e.Message);
+        }
+    }
+
+    public async Task<Result<ImageFolderProcessingResponse, HandledException>> ProcessImageFolderAsync(ImageFolderProcessingRequest request)
+    {
+        try
+        {
+            // Validate request parameters
+            var validationResults = new List<ValidationResult>();
+            var validationContext = new ValidationContext(request, null, null);
+
+            if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+            {
+                return new HandledException(validationResults);
+            }
+
+            // Process each image in the folder
+            List<ImageProcessingResponse> imageResponses = new();
+            
+            foreach (ImageProcessingRequest imageRequest in request.ImagesToProcess)
+            {
+                Result<ImageProcessingResponse, HandledException> result = await ProcessImageAsync(imageRequest);
+
+                HandledException? exception = result.Match<HandledException?>(
+                    success: response =>
+                    {
+                        imageResponses.Add(response);
+                        return null;
+                    },
+                    failure: error => error
+                );
+
+                if (exception is not null)
+                {
+                    return exception.Value;
+                }
+            }
+
+            return new ImageFolderProcessingResponse(imageResponses);
         }
         catch (Exception e)
         {

@@ -299,7 +299,7 @@
         result.Match<object?>(
             success: response =>
             {
-                MemoryStream imageMemoryStream = (MemoryStream)response.FileStream;
+                MemoryStream imageMemoryStream = (MemoryStream)response.Stream;
                 imageMemoryStream.Position = 0;
                 _previewImage = imageMemoryStream;
                 _previewImageSrc = $"data:image/png;base64,{Convert.ToBase64String(_previewImage.ToArray())}";

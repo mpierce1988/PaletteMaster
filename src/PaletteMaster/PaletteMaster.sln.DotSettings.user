@@ -34,6 +34,13 @@
     &lt;TestAncestor&gt;
       &lt;TestId&gt;xUnit::DFE86310-87A7-4B5B-B643-2AB2A43CC9E5::net8.0::PaletteMaster.Services.ImageSharp.Tests.ImageSharpImageProcessingServiceUnitTests.ProcessImageAsync_OriginalImageHasTransparency_ResultHasTransparency&lt;/TestId&gt;
       &lt;TestId&gt;xUnit::DFE86310-87A7-4B5B-B643-2AB2A43CC9E5::net8.0::PaletteMaster.Services.ImageSharp.Tests.ImageSharpImageProcessingServiceUnitTests.ProcessImageAsync_OriginalImageHasTransparency_ResultHasCorrectColorsTransparency&lt;/TestId&gt;
+      &lt;TestId&gt;xUnit::18CE352C-C27A-4A9D-A5AF-778E1190B430::net8.0::PaletteMaster.Services.Tests.FileManagementUnitTests.LoadFolderAsync_ThreeImages_ReturnsThreeFileResponses&lt;/TestId&gt;
+      &lt;TestId&gt;xUnit::18CE352C-C27A-4A9D-A5AF-778E1190B430::net8.0::PaletteMaster.Services.Tests.FileManagementUnitTests.LoadFolderAsync_PathIsEmptyString_ReturnsHandledException&lt;/TestId&gt;
+      &lt;TestId&gt;xUnit::DFE86310-87A7-4B5B-B643-2AB2A43CC9E5::net8.0::PaletteMaster.Services.ImageSharp.Tests.ImageSharpImageProcessingServiceUnitTests.ProcessImageFolderAsync_ThreeItems_ResultHasThreeItems&lt;/TestId&gt;
+      &lt;TestId&gt;xUnit::DFE86310-87A7-4B5B-B643-2AB2A43CC9E5::net8.0::PaletteMaster.Services.ImageSharp.Tests.ImageSharpImageProcessingServiceUnitTests.ProcessImageFolderAsync_NoColors_ReturnsHandledException&lt;/TestId&gt;
+      &lt;TestId&gt;xUnit::18CE352C-C27A-4A9D-A5AF-778E1190B430::net8.0::PaletteMaster.Services.Tests.FileManagementUnitTests.SaveFilesToFolderAsync_ThreeFiles_SavesThreeItemsToOutputFolder&lt;/TestId&gt;
+      &lt;TestId&gt;xUnit::18CE352C-C27A-4A9D-A5AF-778E1190B430::net8.0::PaletteMaster.Services.Tests.FileManagementUnitTests.LoadFolderAsync_SubFolders_ReturnsFilesCorrectRelativePaths&lt;/TestId&gt;
+      &lt;TestId&gt;xUnit::18CE352C-C27A-4A9D-A5AF-778E1190B430::net8.0::PaletteMaster.Services.Tests.FileManagementUnitTests.SaveFilesToFolderAsync_TwoFilesSubfolder_SavesTwoItemsToOutputFolderIncludingSubfolder&lt;/TestId&gt;
     &lt;/TestAncestor&gt;
   &lt;/Or&gt;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

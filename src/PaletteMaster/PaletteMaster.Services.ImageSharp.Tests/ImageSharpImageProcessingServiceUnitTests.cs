@@ -1,6 +1,8 @@
 using System.Runtime.CompilerServices;
 using PaletteMaster.Models;
+using PaletteMaster.Models.DTO.FileManagement;
 using PaletteMaster.Models.DTO.ImageProcessing;
+using PaletteMaster.Services.FileManagement;
 using PaletteMaster.Services.ImageProcessing;
 using PaletteMaster.Services.ImageSharp.Tests.Utilities;
 using SixLabors.ImageSharp;
@@ -12,10 +14,12 @@ namespace PaletteMaster.Services.ImageSharp.Tests;
 public class ImageSharpImageProcessingServiceUnitTests
 {
     private readonly IImageProcessingService _imageProcessingService = new ImageSharpImageProcessingService();
+    private readonly IFileManagementService _fileManagementService = new FileManagementService();
 
     private const string SangriaFileName = "sangria-8x.png";
     private const string MacPaintFileName = "mac-paint-8x.png";
     private const string OrcFileName = "orc07.png";
+    private const string ThreeItemFolder = "ThreeItemFolder";
     
     [Fact]
     public async Task ProcessImageAsync_OriginalImageHasTwoPaletteColors_ResultIdenticalToOriginal()
@@ -48,7 +52,7 @@ public class ImageSharpImageProcessingServiceUnitTests
             {
                 // Save the image to disk for manual inspection
                 using FileStream fileStream = new(TestUtility.GetSamplePath("mac-paint-8x-palette.png"), FileMode.Create);
-                MemoryStream memoryStream = (MemoryStream)response.FileStream;
+                MemoryStream memoryStream = (MemoryStream)response.Stream;
                 memoryStream.Position = 0;
                 byte[] imageBytes = memoryStream.ToArray();
                 fileStream.Write(imageBytes, 0, imageBytes.Length);
@@ -61,7 +65,7 @@ public class ImageSharpImageProcessingServiceUnitTests
         
         Assert.NotNull(response);
         
-        using Image<Rgba32> actualImage = Image.Load<Rgba32>(response.FileStream);
+        using Image<Rgba32> actualImage = Image.Load<Rgba32>(response.Stream);
         
         Assert.True(AllColorsMatch(actualImage, colors));
     }
@@ -97,7 +101,7 @@ public class ImageSharpImageProcessingServiceUnitTests
             {
                 // Save the image to disk for manual inspection
                 using FileStream fileStream = new(TestUtility.GetSamplePath($"{OrcFileName.Split('.')[0]}-palette.png"), FileMode.Create);
-                MemoryStream memoryStream = (MemoryStream)response.FileStream;
+                MemoryStream memoryStream = (MemoryStream)response.Stream;
                 memoryStream.Position = 0;
                 byte[] imageBytes = memoryStream.ToArray();
                 fileStream.Write(imageBytes, 0, imageBytes.Length);
@@ -110,10 +114,103 @@ public class ImageSharpImageProcessingServiceUnitTests
         
         Assert.NotNull(response);
         
-        using Image<Rgba32> resultImage = Image.Load<Rgba32>(response.FileStream);
+        using Image<Rgba32> resultImage = Image.Load<Rgba32>(response.Stream);
         
         Assert.True(AllTransparencyPreserved(inputImage, resultImage));
         Assert.True(AllColorsMatch(resultImage, colors));
+    }
+
+    [Fact]
+    public async Task ProcessImageFolderAsync_ThreeItems_ResultHasThreeItems()
+    {
+        // Arrange
+        string fullPath = TestUtility.GetSamplePath(ThreeItemFolder);
+        LoadFolderRequest folderRequest = new(fullPath);
+        var folderResult = await _fileManagementService.LoadFolderAsync(folderRequest);
+        
+        var (folderResponse, folderError) = folderResult.Match<(LoadFolderResponse?, HandledException?)>(
+            success: response => (response, null),
+            failure: error => (null, error)
+        );
+        
+        Assert.NotNull(folderResponse);
+        
+        List<Color> colors = new()
+        {
+            new("#8bc8feff"),
+            new("#051b2cff")
+        };
+        
+        var imageFolderProcessingRequest = folderResponse.ToImageFolderProcessingRequest(colors);
+        
+        // Act
+        Result<ImageFolderProcessingResponse, HandledException> result =
+            await _imageProcessingService.ProcessImageFolderAsync(imageFolderProcessingRequest);
+
+        var (response, error) = result.Match<(ImageFolderProcessingResponse?, HandledException?)>(
+            success: response => (response, null),
+            failure: error => (null, error)
+            );
+        
+        // Assert
+        Assert.NotNull(response);
+        Assert.Equal(3, response.ProcessedImages.Count);
+    }
+
+    [Fact]
+    public async Task ProcessImageFolderAsync_NoImages_ReturnsHandledException()
+    {
+        // Arrange
+        ImageFolderProcessingRequest request = new();
+        List<Color> colors = new()
+        {
+            new("#8bc8feff"),
+            new("#051b2cff")
+        };
+
+        request.Colors = colors;
+        
+        // Act
+        Result<ImageFolderProcessingResponse, HandledException> result =
+            await _imageProcessingService.ProcessImageFolderAsync(request);
+
+        HandledException? exception = result.Match<HandledException?>(
+            success: response => null,
+            failure: error => error
+            );
+        
+        // Assert
+        Assert.NotNull(exception);
+    }
+    
+    [Fact]
+    public async Task ProcessImageFolderAsync_NoColors_ReturnsHandledException()
+    {
+        // Arrange
+        string fullPath = TestUtility.GetSamplePath(ThreeItemFolder);
+        LoadFolderRequest folderRequest = new(fullPath);
+        var folderResult = await _fileManagementService.LoadFolderAsync(folderRequest);
+        
+        var (folderResponse, folderError) = folderResult.Match<(LoadFolderResponse?, HandledException?)>(
+            success: resp => (resp, null),
+            failure: err => (null, err)
+        );
+        
+        Assert.NotNull(folderResponse);
+        
+        var imageFolderProcessingRequest = folderResponse.ToImageFolderProcessingRequest();
+        
+        // Act
+        Result<ImageFolderProcessingResponse, HandledException> result =
+            await _imageProcessingService.ProcessImageFolderAsync(imageFolderProcessingRequest);
+
+        var (response, error) = result.Match<(ImageFolderProcessingResponse?, HandledException?)>(
+            success: response => (response, null),
+            failure: error => (null, error)
+        );
+        
+        // Assert
+        Assert.NotNull(error);
     }
 
     private bool AllTransparencyPreserved(Image<Rgba32> originalImage, Image<Rgba32> resultImage)

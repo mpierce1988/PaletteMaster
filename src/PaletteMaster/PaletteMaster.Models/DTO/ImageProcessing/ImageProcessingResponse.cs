@@ -4,14 +4,14 @@ namespace PaletteMaster.Models.DTO.ImageProcessing;
 
 public class ImageProcessingResponse
 {
-    public Stream FileStream { get; set; }
+    public MemoryStream Stream { get; set; }
     public string FileName { get; set; }
-    
-    public string FilePath { get; set; }
+    public string RelativePath { get; set; }
 
-    public ImageProcessingResponse(Stream fileStream, string fileName)
+    public ImageProcessingResponse(MemoryStream stream, string fileName, string relativePath)
     {
-        FileStream = fileStream;
+        Stream = stream;
         FileName = fileName;
+        RelativePath = relativePath;
     }
 }

@@ -28,7 +28,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Samples\" />
+      <Folder Include="Samples\Output\" />
+      <Folder Include="Samples\Subfolder\" />
+      <Folder Include="Samples\ThreeItems\" />
     </ItemGroup>
 
     <ItemGroup>
@@ -36,6 +38,21 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="Samples\PaintNETSample.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Samples\ThreeItems\cartoonGuy.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Samples\ThreeItems\orc07.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Samples\ThreeItems\Pixel_art_Wizard_Portrait.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Samples\Subfolder\orc07.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Samples\Subfolder\Sub\Pixel_art_Wizard_Portrait.png">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

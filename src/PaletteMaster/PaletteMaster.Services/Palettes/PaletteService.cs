@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using PaletteMaster.Models;
 using PaletteMaster.Models.Domain;
 using PaletteMaster.Models.DTO.Palettes;
+using PaletteMaster.Services.Utilities;
 
 namespace PaletteMaster.Services.Palettes;
 
@@ -18,11 +19,7 @@ public class PaletteService : IPaletteService
     {
         try
         {
-            // Validate request parameters
-            var validationResults = new List<ValidationResult>();
-            var validationContext = new ValidationContext(request, null, null);
-
-            if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+            if (!ValidatorUtility.TryValidateObject(request, out var validationResults))
             {
                 return new HandledException(validationResults);
             }
@@ -57,11 +54,7 @@ public class PaletteService : IPaletteService
     {
         try
         {
-            // Validate request parameters
-            var validationResults = new List<ValidationResult>();
-            var validationContext = new ValidationContext(request, null, null);
-
-            if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+            if (!ValidatorUtility.TryValidateObject(request, out var validationResults))
             {
                 return new HandledException(validationResults);
             }
@@ -85,11 +78,7 @@ public class PaletteService : IPaletteService
     {
         try
         {
-            // Validate request parameters
-            var validationResults = new List<ValidationResult>();
-            var validationContext = new ValidationContext(request, null, null);
-
-            if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+            if (!ValidatorUtility.TryValidateObject(request, out var validationResults))
             {
                 return new HandledException(validationResults);
             }
