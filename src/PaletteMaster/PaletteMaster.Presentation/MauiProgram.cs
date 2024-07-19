@@ -3,6 +3,7 @@ using CommunityToolkit.Maui.Storage;
 using Microsoft.Extensions.Logging;
 using PaletteMaster.Presentation.Services;
 using PaletteMaster.Repository;
+using PaletteMaster.Services.FileManagement;
 using PaletteMaster.Services.ImageProcessing;
 using PaletteMaster.Services.ImageSharp;
 using PaletteMaster.Services.Imports;
@@ -32,6 +33,7 @@ public static class MauiProgram
 #endif
         builder.Services.AddSingleton<IFolderPicker>(FolderPicker.Default);
         builder.Services.AddSingleton<IFileSaver>(FileSaver.Default);
+        builder.Services.AddScoped<IFileManagementService, FileManagementService>();
         
         builder.Services.AddScoped<IPaletteRepository, PaletteRepository>();
         builder.Services.AddScoped<IPaletteService, PaletteService>();

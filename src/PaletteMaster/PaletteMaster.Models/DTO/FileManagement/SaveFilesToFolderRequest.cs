@@ -13,10 +13,10 @@ public class SaveFilesToFolderRequest
         OutputPath = outputPath;
     }
 
-    public SaveFilesToFolderRequest(ImageFolderProcessingResponse imageFolderProcessingResponse, string outputPath)
+    public SaveFilesToFolderRequest(ProcessImagesResponse processImagesResponse, string outputPath)
     {
         OutputPath = outputPath;
-        foreach (var processedImage in imageFolderProcessingResponse.ProcessedImages)
+        foreach (var processedImage in processImagesResponse.ProcessedImages)
         {
             FileToSave file = new FileToSave(processedImage.FileName, processedImage.RelativePath, processedImage.Stream);
             FilesToSave.Add(file);

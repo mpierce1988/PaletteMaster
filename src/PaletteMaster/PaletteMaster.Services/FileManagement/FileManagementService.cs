@@ -25,6 +25,8 @@ public class FileManagementService : IFileManagementService
             foreach (string file in files)
             {
                 string fileName = Path.GetFileName(file);
+                if (!fileName.Contains(".png")) continue;
+                
                 FileStream fileStream = File.OpenRead(file);
                 FileResponse fileResponse = new(fileName, file, fileStream);
                 response.Files.Add(fileResponse);
@@ -50,9 +52,11 @@ public class FileManagementService : IFileManagementService
             // Save files to directory
             foreach (FileToSave file in request.FilesToSave)
             {
-                EnsureDirectoryExists(request, file);
-                
-                using FileStream fileStream = File.Create(Path.Combine(request.OutputPath, file.RelativePath));
+                EnsureDirectoryExists(request.OutputPath, file);
+
+                string finalPath = GetFinalOutputPath(request.OutputPath, file);
+
+                await using FileStream fileStream = File.Create(finalPath);
                 await file.Stream.CopyToAsync(fileStream);
             }
             
@@ -64,11 +68,51 @@ public class FileManagementService : IFileManagementService
         }
     }
 
-    private void EnsureDirectoryExists(SaveFilesToFolderRequest request, FileToSave file)
+    /// <summary>
+    /// Get the final output path for the file
+    /// </summary>
+    /// <param name="initialOutputPath">The initial output path root directory</param>
+    /// <param name="file">FileToSave which includes the filename and relative path</param>
+    /// <returns>The final output path for the file in the output directory, including subdirectories</returns>
+    private string GetFinalOutputPath(string initialOutputPath, FileToSave file)
     {
+        string finalPath = initialOutputPath;
+        
+        // Use index from end expression to ensure last character is a slash
+        if(finalPath[^1] != '/')
+        {
+            finalPath += "/";
+        }
+
+        if (file.RelativePath.TrimStart('/') == file.FileName)
+        {
+            finalPath += file.FileName;
+        }
+        else
+        {
+            //string relativePathWithoutFilename = file.RelativePath.TrimStart('/').Replace(file.FileName, "");
+            finalPath += file.RelativePath.TrimStart('/');
+        }
+
+        return finalPath;
+    }
+
+    /// <summary>
+    /// Ensure the directory exists for the file 
+    /// </summary>
+    /// <param name="initialOutputPath">The initial output path root directory</param>
+    /// <param name="file">FileToSave which includes the filename and relative path</param>
+    private void EnsureDirectoryExists(string initialOutputPath, FileToSave file)
+    {
+        // Ensure initialOutputPath ends in a slash
+        if (initialOutputPath[^1] != '/')
+        {
+            initialOutputPath += "/";
+        }
+        
         string relativePathWithoutFilename = file.RelativePath.Replace(file.FileName, "");
         // Get relative path without the filename
-        string fullPath = Path.GetFullPath(Path.Combine(request.OutputPath, relativePathWithoutFilename));
+        string fullPath = string.Concat(initialOutputPath, relativePathWithoutFilename);
                
         // Create directory if it doesn't exist
         if (!Directory.Exists(fullPath))

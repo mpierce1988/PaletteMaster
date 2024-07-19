@@ -3,11 +3,11 @@ using PaletteMaster.Models.Domain;
 
 namespace PaletteMaster.Models.DTO.ImageProcessing;
 
-public class ImageFolderProcessingRequest
+public class ProcessImagesRequest
 {
     [Required]
     [MinLength(1, ErrorMessage = "At Least One Image Is Required")]
-    public List<ImageProcessingRequest> ImagesToProcess { get; set; } = new();
+    public List<ProcessImageRequest> ImagesToProcess { get; set; } = new();
     
     [Required(ErrorMessage = "Colors Are Required")]
     [MinLength(1, ErrorMessage = "At Least One Color Is Required")]

@@ -1,8 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Numerics;
 using PaletteMaster.Models;
+using PaletteMaster.Models.DTO.FileManagement;
 using PaletteMaster.Models.DTO.ImageProcessing;
+using PaletteMaster.Services.FileManagement;
 using PaletteMaster.Services.ImageProcessing;
+using PaletteMaster.Services.Utilities;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -13,6 +16,13 @@ namespace PaletteMaster.Services.ImageSharp;
 
 public class ImageSharpImageProcessingService : IImageProcessingService
 {
+    private readonly IFileManagementService _fileManagementService;
+    
+    public ImageSharpImageProcessingService(IFileManagementService fileManagementService)
+    {
+        _fileManagementService = fileManagementService;
+    }
+    
     /// <summary>
     /// Processes an image according to the provided request parameters. This includes validating the request,
     /// converting the input stream to an Image<Rgba32>, applying a color palette transformation, and returning
@@ -21,7 +31,7 @@ public class ImageSharpImageProcessingService : IImageProcessingService
     /// <param name="request">The image processing request containing the image stream and processing parameters.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the ImageProcessingResponse
     /// object with the processed image stream, or a HandledException detailing any errors encountered during processing.</returns>
-    public async Task<Result<ImageProcessingResponse, HandledException>> ProcessImageAsync(ImageProcessingRequest request)
+    public async Task<Result<ProcessImageResponse, HandledException>> ProcessImageAsync(ProcessImageRequest request)
     { 
         try
         {
@@ -47,7 +57,7 @@ public class ImageSharpImageProcessingService : IImageProcessingService
             await image.SaveAsPngAsync(stream);
             stream.Position = 0;
             
-            return new ImageProcessingResponse(stream, request.FileName, request.RelativePath!);
+            return new ProcessImageResponse(stream, request.FileName, request.RelativePath!);
         }
         catch (Exception e)
         {
@@ -55,7 +65,7 @@ public class ImageSharpImageProcessingService : IImageProcessingService
         }
     }
 
-    public async Task<Result<ImageFolderProcessingResponse, HandledException>> ProcessImageFolderAsync(ImageFolderProcessingRequest request)
+    public async Task<Result<ProcessImagesResponse, HandledException>> ProcessImagesAsync(ProcessImagesRequest request)
     {
         try
         {
@@ -69,11 +79,11 @@ public class ImageSharpImageProcessingService : IImageProcessingService
             }
 
             // Process each image in the folder
-            List<ImageProcessingResponse> imageResponses = new();
+            List<ProcessImageResponse> imageResponses = new();
             
-            foreach (ImageProcessingRequest imageRequest in request.ImagesToProcess)
+            foreach (ProcessImageRequest imageRequest in request.ImagesToProcess)
             {
-                Result<ImageProcessingResponse, HandledException> result = await ProcessImageAsync(imageRequest);
+                Result<ProcessImageResponse, HandledException> result = await ProcessImageAsync(imageRequest);
 
                 HandledException? exception = result.Match<HandledException?>(
                     success: response =>
@@ -90,7 +100,72 @@ public class ImageSharpImageProcessingService : IImageProcessingService
                 }
             }
 
-            return new ImageFolderProcessingResponse(imageResponses);
+            return new ProcessImagesResponse(imageResponses);
+        }
+        catch (Exception e)
+        {
+            return new HandledException(e.Message);
+        }
+    }
+
+    public async Task<Result<ProcessFolderResponse, HandledException>> ProcessFolderAsync(ProcessFolderRequest request)
+    {
+        try
+        {
+            if (!ValidatorUtility.TryValidateObject(request, out List<ValidationResult> validationResults))
+            {
+                return new HandledException(validationResults);
+            }
+            
+            Result<LoadFolderResponse, HandledException> loadFolderResult = await _fileManagementService.LoadFolderAsync(
+                new LoadFolderRequest(request.SourceFolder));
+
+            var (response, error) = loadFolderResult.Match<(LoadFolderResponse?, HandledException?)>(
+                success: folderResponse => (folderResponse, null),
+                failure: error => (null, error)
+                );
+
+            if (error is not null) return error.Value;
+            
+            List<ProcessImageRequest> imageRequests = response!.Files
+                .Select(file => new ProcessImageRequest
+                {
+                    Colors = request.Colors,
+                    FileStream = file.FileStream,
+                    FileName = file.FileName,
+                    RelativePath = file.Path.Replace(request.SourceFolder, "")
+                })
+                .ToList();
+            ProcessImagesRequest processImagesRequest = new();
+
+            processImagesRequest.ImagesToProcess = imageRequests;
+            processImagesRequest.Colors = request.Colors;
+
+            Result<ProcessImagesResponse, HandledException> processImagesResult =
+                await ProcessImagesAsync(processImagesRequest);
+
+            var (processImagesResponse, processImagesError) =
+                processImagesResult.Match<(ProcessImagesResponse?, HandledException?)>(
+                    success: processImageResp => (processImageResp, null),
+                    failure: processImageErr => (null, processImageErr)
+                );
+
+            if (processImagesError is not null) return processImagesError.Value;
+            
+            // Save files to folder
+            SaveFilesToFolderRequest saveFilesToFolderRequest = new(processImagesResponse!, request.OutputFolder);
+            
+            Result<SaveFilesToFolderResponse, HandledException> saveFilesResult = await _fileManagementService.SaveFilesToFolderAsync(saveFilesToFolderRequest);
+            
+            var (saveFilesResponse, saveFilesError) = saveFilesResult.Match<(SaveFilesToFolderResponse?, HandledException?)>(
+                success: saveFilesResp => (saveFilesResp, null),
+                failure: saveFilesErr => (null, saveFilesErr)
+            );
+            
+            if (saveFilesError is not null) return saveFilesError.Value;
+            
+            return new ProcessFolderResponse(saveFilesResponse!.Path);
+
         }
         catch (Exception e)
         {

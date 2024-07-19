@@ -127,6 +127,12 @@ public class FileManagementUnitTests
             {
                 file.Delete();
             }
+            
+            // Delete any subfolders
+            foreach (DirectoryInfo directory in outputDirectory.GetDirectories())
+            {
+                directory.Delete(true);
+            }
         }
         else
         {

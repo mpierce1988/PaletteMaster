@@ -4,7 +4,7 @@ using PaletteMaster.Models.Domain;
 
 namespace PaletteMaster.Models.DTO.ImageProcessing;
 
-public class ImageProcessingRequest
+public class ProcessImageRequest
 {
     [Required(ErrorMessage = "Colors Are Required")]
     [MinLength(1, ErrorMessage = "At Least One Color Is Required")]
@@ -13,7 +13,7 @@ public class ImageProcessingRequest
     public Stream? FileStream { get; set; }
     
     [NotNull]
-    [CustomValidation(typeof(ImageProcessingRequest), "ValidateFileName")]
+    [CustomValidation(typeof(ProcessImageRequest), "ValidateFileName")]
     public string? FileName { get; set; }
     
     public string? FilePath { get; set; }

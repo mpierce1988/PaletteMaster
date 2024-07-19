@@ -1,0 +1,214 @@
+@page "/ProcessFolder"
+@using PaletteMaster.Models.DTO.ImageProcessing
+@using CommunityToolkit.Maui.Storage
+@using PaletteMaster.Models.Domain
+@using PaletteMaster.Models.DTO.Palettes
+@using PaletteMaster.Services.ImageProcessing
+@using PaletteMaster.Services.Palettes
+<h3>Process Folder</h3>
+
+<br />
+
+@if (_errorMessage is not null)
+{
+    <article>
+        <header class="pico-background-red-500">An Error Has Occurred</header>
+        <p>@_errorMessage</p>
+    </article>
+}
+
+@if (_processFolderResponse is not null)
+{
+    <article>
+        <header class="pico-background-green-500">PNG Images in Folder Successfully Converted and Exported</header>
+        <p>Files saved to @_processFolderResponse.OutputFolder</p>
+    </article>
+}
+
+<EditForm Model="@_processFolderRequest" OnValidSubmit="ProcessFiles">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    
+    <div class="row">
+        <div class="col-xs-12 col-md-6">
+            <button type="button" @onclick="PickSourceFolder">Select Source Folder</button>
+        </div>
+        <div class="col-xs-12 col-md-6">
+            <button type="button" @onclick="PickOutputFolder">Select Output Folder</button>
+        </div>
+    
+        @if (_palettes is not null)
+        {
+            
+            <div class="col-xs-12">
+                <select @bind-value="@_selectedPaletteIdString" @bind-value:event="@_selectedPaletteIdString" @onchange="HandleSelectedPaletteChange">
+                    <option value=""></option>
+                    @foreach (Palette palette in _palettes)
+                    {
+                        <option value="@palette.PaletteId">@palette.Name</option>
+                    }
+                </select>
+            </div>
+            
+            
+            <!--
+            <InputSelect Value="@_selectedPaletteId">
+                <option value="">Select Palette</option>
+                @foreach (Palette palette in _palettes)
+                {
+                    <option value="@(palette.PaletteId)">@palette.Name</option>
+                }
+            </InputSelect>
+            -->
+            
+            <!--
+                <InputSelect TValue="Int32" @bind-Value="@_selectedPaletteId">
+                    <option value="0">Select Palette</option>
+                    @foreach (Palette palette in _palettes)
+                    {
+                        <option value="@(palette.PaletteId)">@palette.Name</option>
+                    }
+                </InputSelect>
+                -->
+            
+        }
+        
+        <div class="col-xs-12">
+            <button type="Submit">Process Images</button>
+            <button type="button" @onclick="Reset" class="secondary">Reset</button>
+        </div>
+    </div>
+</EditForm>
+
+@if (_processFolderRequest is not null)
+{
+    <p>DEBUG Folder Request Parameters</p>
+    <p>Source Folder: @_processFolderRequest.SourceFolder</p>
+    <p>Output Folder: @_processFolderRequest.OutputFolder</p>
+    <p>Number of Colors: @(_processFolderRequest.Colors?.Count.ToString() ?? "None") </p>
+}
+
+@code {
+
+    [Inject] private IFolderPicker FolderPicker { get; set; } = default!;
+    [Inject] private IPaletteService PaletteService { get; set; } = default!;
+    [Inject] private IImageProcessingService ImageProcessingService { get; set; } = default!;
+    
+    private ProcessFolderRequest _processFolderRequest = new();
+    private ProcessFolderResponse? _processFolderResponse = null;
+
+    private List<Palette>? _palettes;
+
+    private string? _errorMessage;
+    private bool _isProcessing;
+    private bool _isLoading;
+    
+    private int _selectedPaletteId;
+    private string _selectedPaletteIdString = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetPalettes();
+        await base.OnInitializedAsync();
+    }
+
+    private async Task ProcessFiles()
+    {
+        _isProcessing = true;
+        
+        Result<ProcessFolderResponse, HandledException> result = await ImageProcessingService.ProcessFolderAsync(_processFolderRequest);
+        
+        var (processFolderResponse, handledException) = result.Match<(ProcessFolderResponse?, HandledException?)>(
+            success: response => (response, null),
+            failure: error => (null, error)
+        );
+
+        if(processFolderResponse is not null) {
+            _processFolderResponse = processFolderResponse;
+        }
+        else
+        {
+            _errorMessage = handledException!.Value.Message;
+            if (handledException.Value.IsValidationError)
+            {
+                _errorMessage = string.Join(", ", handledException.Value.ValidationResults.Select(vr => vr.ErrorMessage));
+            }
+        }
+        
+        _isProcessing = false;
+    }
+
+    private async Task PickSourceFolder()
+    {
+        FolderPickerResult result = await FolderPicker.PickAsync();
+        
+        if (!result.IsSuccessful)
+        {
+            _errorMessage = result.Exception?.Message ?? "Error selecting source folder";
+            return;
+        }
+        
+        _processFolderRequest.SourceFolder = result.Folder.Path;
+    }
+
+    private async Task PickOutputFolder()
+    {
+        
+        FolderPickerResult result = await FolderPicker.PickAsync();
+        
+        if (!result.IsSuccessful)
+        {
+            _errorMessage = result.Exception?.Message ?? "Error selecting output folder";
+            return;
+        }
+        
+        _processFolderRequest.OutputFolder = result.Folder.Path;
+    }
+
+    private async Task GetPalettes()
+    {
+        _isLoading = true;
+        
+        GetPalettesRequest request = new()
+        {
+            Page = 1,
+            PageSize = int.MaxValue
+        };
+        
+        Result<GetPalettesResponse, HandledException> result = await PaletteService.GetPalettesAsync(request);
+        
+        var (getPalettesResponse, handledException) = result.Match<(GetPalettesResponse?, HandledException?)>(
+            success: response => (response, null),
+            failure: error => (null, error)
+        );
+
+        if (getPalettesResponse is not null)
+        {
+            _palettes = getPalettesResponse.Palettes;
+        }
+        else
+        {
+            _errorMessage = handledException!.Value.Message;
+        }
+        
+        _isLoading = false;
+    }
+
+    private void Reset()
+    {
+        _processFolderRequest = new();
+        _isLoading = false;
+        _errorMessage = null;
+        _isProcessing = false;
+    }
+
+    private void HandleSelectedPaletteChange(ChangeEventArgs obj)
+    {
+        string valueAsString = obj.Value.ToString();
+        if (int.TryParse(valueAsString, out int palletteId))
+        {
+            _processFolderRequest.Colors = _palettes?.First(p => p.PaletteId == palletteId).Colors ?? null;
+        }
+    }
+
+}

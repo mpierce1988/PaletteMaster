@@ -283,14 +283,14 @@
 
         DateTime start = DateTime.Now;
         
-        ImageProcessingRequest request = new()
+        ProcessImageRequest request = new()
         {
             FileName = _fileName,
             FileStream = _receuvedImage,
             Colors = _request.Colors
         };
         
-        Result<ImageProcessingResponse,HandledException> result = await ImageProcessingService.ProcessImageAsync(request);
+        Result<ProcessImageResponse,HandledException> result = await ImageProcessingService.ProcessImageAsync(request);
         
         DateTime end = DateTime.Now;
         

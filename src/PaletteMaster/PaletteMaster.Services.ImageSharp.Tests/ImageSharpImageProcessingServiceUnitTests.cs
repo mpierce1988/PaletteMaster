@@ -13,7 +13,7 @@ namespace PaletteMaster.Services.ImageSharp.Tests;
 
 public class ImageSharpImageProcessingServiceUnitTests
 {
-    private readonly IImageProcessingService _imageProcessingService = new ImageSharpImageProcessingService();
+    private readonly IImageProcessingService _imageProcessingService = new ImageSharpImageProcessingService(new FileManagementService());
     private readonly IFileManagementService _fileManagementService = new FileManagementService();
 
     private const string SangriaFileName = "sangria-8x.png";
@@ -32,7 +32,7 @@ public class ImageSharpImageProcessingServiceUnitTests
             new("#051b2cff")
         };
 
-        ImageProcessingRequest request = new()
+        ProcessImageRequest request = new()
         {
             FileName = SangriaFileName,
             FileStream = inputStream,
@@ -44,10 +44,10 @@ public class ImageSharpImageProcessingServiceUnitTests
         expectedImage.CopyPixelDataTo(expectedBytes);
 
         // Act
-        Result<ImageProcessingResponse, HandledException> result =
+        Result<ProcessImageResponse, HandledException> result =
             await _imageProcessingService.ProcessImageAsync(request);
 
-        ImageProcessingResponse? response = result.Match<ImageProcessingResponse?>(
+        ProcessImageResponse? response = result.Match<ProcessImageResponse?>(
             success: response =>
             {
                 // Save the image to disk for manual inspection
@@ -81,7 +81,7 @@ public class ImageSharpImageProcessingServiceUnitTests
             new("#051b2cff")
         };
 
-        ImageProcessingRequest request = new()
+        ProcessImageRequest request = new()
         {
             FileName = SangriaFileName,
             FileStream = inputStream,
@@ -93,15 +93,15 @@ public class ImageSharpImageProcessingServiceUnitTests
         inputImage.CopyPixelDataTo(expectedBytes);
 
         // Act
-        Result<ImageProcessingResponse, HandledException> result =
+        Result<ProcessImageResponse, HandledException> result =
             await _imageProcessingService.ProcessImageAsync(request);
 
-        ImageProcessingResponse? response = result.Match<ImageProcessingResponse?>(
+        ProcessImageResponse? response = result.Match<ProcessImageResponse?>(
             success: response =>
             {
                 // Save the image to disk for manual inspection
                 using FileStream fileStream = new(TestUtility.GetSamplePath($"{OrcFileName.Split('.')[0]}-palette.png"), FileMode.Create);
-                MemoryStream memoryStream = (MemoryStream)response.Stream;
+                MemoryStream memoryStream = response.Stream;
                 memoryStream.Position = 0;
                 byte[] imageBytes = memoryStream.ToArray();
                 fileStream.Write(imageBytes, 0, imageBytes.Length);
@@ -144,10 +144,10 @@ public class ImageSharpImageProcessingServiceUnitTests
         var imageFolderProcessingRequest = folderResponse.ToImageFolderProcessingRequest(colors);
         
         // Act
-        Result<ImageFolderProcessingResponse, HandledException> result =
-            await _imageProcessingService.ProcessImageFolderAsync(imageFolderProcessingRequest);
+        Result<ProcessImagesResponse, HandledException> result =
+            await _imageProcessingService.ProcessImagesAsync(imageFolderProcessingRequest);
 
-        var (response, error) = result.Match<(ImageFolderProcessingResponse?, HandledException?)>(
+        var (response, error) = result.Match<(ProcessImagesResponse?, HandledException?)>(
             success: response => (response, null),
             failure: error => (null, error)
             );
@@ -161,7 +161,7 @@ public class ImageSharpImageProcessingServiceUnitTests
     public async Task ProcessImageFolderAsync_NoImages_ReturnsHandledException()
     {
         // Arrange
-        ImageFolderProcessingRequest request = new();
+        ProcessImagesRequest request = new();
         List<Color> colors = new()
         {
             new("#8bc8feff"),
@@ -171,8 +171,8 @@ public class ImageSharpImageProcessingServiceUnitTests
         request.Colors = colors;
         
         // Act
-        Result<ImageFolderProcessingResponse, HandledException> result =
-            await _imageProcessingService.ProcessImageFolderAsync(request);
+        Result<ProcessImagesResponse, HandledException> result =
+            await _imageProcessingService.ProcessImagesAsync(request);
 
         HandledException? exception = result.Match<HandledException?>(
             success: response => null,
@@ -201,10 +201,10 @@ public class ImageSharpImageProcessingServiceUnitTests
         var imageFolderProcessingRequest = folderResponse.ToImageFolderProcessingRequest();
         
         // Act
-        Result<ImageFolderProcessingResponse, HandledException> result =
-            await _imageProcessingService.ProcessImageFolderAsync(imageFolderProcessingRequest);
+        Result<ProcessImagesResponse, HandledException> result =
+            await _imageProcessingService.ProcessImagesAsync(imageFolderProcessingRequest);
 
-        var (response, error) = result.Match<(ImageFolderProcessingResponse?, HandledException?)>(
+        var (response, error) = result.Match<(ProcessImagesResponse?, HandledException?)>(
             success: response => (response, null),
             failure: error => (null, error)
         );

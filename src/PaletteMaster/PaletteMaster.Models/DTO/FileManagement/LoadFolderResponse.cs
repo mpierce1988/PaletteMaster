@@ -14,15 +14,15 @@ public class LoadFolderResponse
         Path = path;
     }
 
-    public ImageFolderProcessingRequest ToImageFolderProcessingRequest(List<Color>? colors = null)
+    public ProcessImagesRequest ToImageFolderProcessingRequest(List<Color>? colors = null)
     {
-        var imageFolderProcessingRequest = new ImageFolderProcessingRequest();
+        var imageFolderProcessingRequest = new ProcessImagesRequest();
         colors ??= new();
         imageFolderProcessingRequest.Colors = colors;
         
         foreach (FileResponse file in Files)
         {
-            var imageProcessingRequest = new ImageProcessingRequest()
+            var imageProcessingRequest = new ProcessImageRequest()
             {
                 FileName = file.FileName,
                 FilePath = file.Path,
