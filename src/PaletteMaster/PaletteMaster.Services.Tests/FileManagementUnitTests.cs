@@ -145,6 +145,7 @@ public class FileManagementUnitTests
         string image1Path = Path.Combine(TestUtility.GetSamplePath(ThreeItemsFolderName), Image1Name);
         FileStream image1Stream = File.OpenRead(image1Path);
         MemoryStream image1MemoryStream = new();
+        image1Stream.Position = 0;
         await image1Stream.CopyToAsync(image1MemoryStream);
         FileToSave image1FileToSave = new FileToSave(Image1Name, Image1Name, image1MemoryStream);
         filesToSave.Add(image1FileToSave);
@@ -152,6 +153,7 @@ public class FileManagementUnitTests
         string image2Path = Path.Combine(TestUtility.GetSamplePath(ThreeItemsFolderName), Image2Name);
         FileStream image2Stream = File.OpenRead(image2Path);
         MemoryStream image2MemoryStream = new();
+        image2Stream.Position = 0;
         await image2Stream.CopyToAsync(image2MemoryStream);
         FileToSave image2FileToSave = new FileToSave(Image2Name, Image2Name, image2MemoryStream);
         
@@ -160,6 +162,7 @@ public class FileManagementUnitTests
         string image3Path = Path.Combine(TestUtility.GetSamplePath(ThreeItemsFolderName), Image3Name);
         FileStream image3Stream = File.OpenRead(image3Path);
         MemoryStream image3MemoryStream = new();
+        image3Stream.Position = 0;
         await image3Stream.CopyToAsync(image3MemoryStream);
         FileToSave image3FileToSave = new FileToSave(Image3Name, Image3Name, image3MemoryStream);
         filesToSave.Add(image3FileToSave);
